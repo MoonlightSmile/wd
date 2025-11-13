@@ -63,7 +63,8 @@ const HEIGHT = 200;
 
 function App() {
 	const [images, setImages] = useState<ImageItem[]>([]);
-	const [progress, setProgress] = useState<string>();
+	const [total, setTotal] = useState<number>(0);
+	const [processed, setProcessed] = useState<number>(0);
 	// width
 	const [width, setWidth] = useState<number>(window.innerWidth);
 
@@ -76,12 +77,12 @@ function App() {
 		);
 
 		const total = files.length;
-		let progress = 0;
+		setTotal(total);
+		setProcessed(0);
 		const images = [];
 		console.time("createImageItem");
 		for await (const element of files.map(createImageItem)) {
-			progress += 1;
-			setProgress(`${progress} / ${total}`);
+			setProcessed((prev) => prev + 1);
 			images.push(element);
 		}
 		setImages(images);
@@ -121,10 +122,12 @@ function App() {
 				accept="image/*"
 				onChange={handleFileChange}
 			/>
-			{progress && <div>{progress}</div>}
+			<div>
+				图片处理中：{processed} / {total}
+			</div>
 			{layout.map((row) => (
 				<div
-					key="1"
+					key={row.id}
 					style={{
 						height: row.height.toNumber(),
 						display: "flex",

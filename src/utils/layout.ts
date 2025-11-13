@@ -1,5 +1,6 @@
 import Decimal from "decimal.js";
 import type { ImageItem } from "../App";
+import { v7 as uuid } from "uuid";
 
 export type calcImageRowParams<T extends ImageItem> = {
 	list: T[];
@@ -10,6 +11,7 @@ export type calcImageRowParams<T extends ImageItem> = {
 };
 export type Result<T extends ImageItem> = {
 	height: Decimal;
+	id: string;
 	list: T[];
 	notFull: boolean;
 }[];
@@ -25,6 +27,7 @@ export function calcImageRow<T extends ImageItem>({
 			height: new Decimal(height),
 			list: [] as T[],
 			notFull: false,
+			id: uuid(),
 		},
 	];
 	let currentRowIndex = 0;
@@ -39,6 +42,7 @@ export function calcImageRow<T extends ImageItem>({
 		if (remainWidth.lt(w)) {
 			currentRowIndex++;
 			grid.push({
+				id: uuid(),
 				height: new Decimal(height),
 				list: [i],
 				notFull: false,
