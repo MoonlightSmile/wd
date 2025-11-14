@@ -3,6 +3,7 @@ import { imageSize } from "image-size";
 import Decimal from "decimal.js";
 import { isEmpty } from "es-toolkit/compat";
 import { calcImageRow } from "./utils/layout";
+import { v7 as uuid } from "uuid";
 const formatBytes = (size: number) => {
 	if (!size) return "0 B";
 	const units = ["B", "KB", "MB", "GB", "TB"];
@@ -35,28 +36,6 @@ export type ImageItem = {
 	};
 	path: string;
 };
-const createImageItem = async (file: File): Promise<ImageItem> => {
-	const objectUrl = URL.createObjectURL(file);
-	const path = file.webkitRelativePath || file.name;
-	const uint8Array = new Uint8Array(await file.arrayBuffer());
-	console.log("file :>> ", file);
-	const size = imageSize(uint8Array);
-	const aspectRatio = new Decimal(size.width).div(size.height).toNumber();
-	return {
-		id: `${file.name}-${file.lastModified}-${file.size}`,
-		name: path,
-		url: objectUrl,
-		size: formatBytes(file.size),
-		lastModified: formatDate(file.lastModified),
-		ratio: aspectRatio,
-		aspectRatio: `${size.width}x${size.height}`,
-		thumbs: {
-			original: objectUrl,
-			small: objectUrl,
-		},
-		path,
-	};
-};
 
 const GAP = 5;
 const HEIGHT = 200;
@@ -67,6 +46,28 @@ function App() {
 	const [processed, setProcessed] = useState<number>(0);
 	// width
 	const [width, setWidth] = useState<number>(window.innerWidth);
+	const createImageItem = async (file: File): Promise<ImageItem> => {
+		const objectUrl = URL.createObjectURL(file);
+		const path = file.webkitRelativePath || file.name;
+		const uint8Array = new Uint8Array(await file.arrayBuffer());
+		const size = imageSize(uint8Array);
+		const aspectRatio = new Decimal(size.width).div(size.height).toNumber();
+		setProcessed((prev) => prev + 1);
+		return {
+			id: uuid(),
+			name: path,
+			url: objectUrl,
+			size: formatBytes(file.size),
+			lastModified: formatDate(file.lastModified),
+			ratio: aspectRatio,
+			aspectRatio: `${size.width}x${size.height}`,
+			thumbs: {
+				original: objectUrl,
+				small: objectUrl,
+			},
+			path,
+		};
+	};
 
 	const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (
 		e,
@@ -81,8 +82,8 @@ function App() {
 		setProcessed(0);
 		const images = [];
 		console.time("createImageItem");
-		for await (const element of files.map(createImageItem)) {
-			setProcessed((prev) => prev + 1);
+		const promises = files.map(createImageItem);
+		for await (const element of promises) {
 			images.push(element);
 		}
 		setImages(images);
