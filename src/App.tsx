@@ -81,8 +81,8 @@ function App() {
 	const [width, setWidth] = useState<number>(window.innerWidth);
 	const createImageItem = async (file: File): Promise<ImageItem> => {
 		const originalUrl = URL.createObjectURL(file);
-		const compressedFile = await _Compressor(file, { quality: 0.1 });
-		const objectUrl = URL.createObjectURL(compressedFile);
+		// const compressedFile = await _Compressor(file, { quality: 0.1 });
+		const objectUrl = ""
 		const path = file.webkitRelativePath || file.name;
 		const key = md5(path);
 		const item = LocalStorageForImageSize.getItem(key);
@@ -215,7 +215,7 @@ function App() {
 								rel="noreferrer"
 								className="shadow-md rounded-md overflow-hidden"
 							>
-								<img src={image.thumbs.small} alt={image.name} loading="lazy" />
+								<img src={image.thumbs.original} alt={image.name} loading="lazy" />
 							</a>
 						))}
 					</div>
