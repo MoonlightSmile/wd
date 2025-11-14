@@ -5,9 +5,27 @@ import { isEmpty } from "es-toolkit/compat";
 import { calcImageRow } from "./utils/layout";
 import { v7 as uuid } from "uuid";
 import md5 from "blueimp-md5";
-import Pica from "pica";
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 import "photoswipe/style.css";
+import Compressor from "compressorjs";
+
+const _Compressor = (
+	file: File | Blob,
+	options?: Compressor.Options,
+): Promise<File | Blob> => {
+	return new Promise((resolve, reject) => {
+		new Compressor(file, {
+			quality: 0.1,
+			success(file) {
+				resolve(file);
+			},
+			error(error) {
+				reject(error);
+			},
+			...options,
+		});
+	});
+};
 
 class LocalStorageForImageSize {
 	static getItem(key: string) {
@@ -62,12 +80,16 @@ function App() {
 	// width
 	const [width, setWidth] = useState<number>(window.innerWidth);
 	const createImageItem = async (file: File): Promise<ImageItem> => {
-		const objectUrl = URL.createObjectURL(file);
+		const originalUrl = URL.createObjectURL(file);
+		const compressedFile = await _Compressor(file, { quality: 0.1 });
+		const objectUrl = URL.createObjectURL(compressedFile);
 		const path = file.webkitRelativePath || file.name;
 		const key = md5(path);
 		const item = LocalStorageForImageSize.getItem(key);
 		if (item) {
-			item.url = objectUrl;
+			item.url = originalUrl;
+			item.thumbs.original = originalUrl;
+			item.thumbs.small = objectUrl;
 			setProcessed((prev) => prev + 1);
 			return item;
 		}
@@ -77,13 +99,13 @@ function App() {
 		const imageItem: ImageItem = {
 			id: uuid(),
 			name: path,
-			url: objectUrl,
+			url: originalUrl,
 			size: formatBytes(file.size),
 			lastModified: formatDate(file.lastModified),
 			ratio: aspectRatio,
 			aspectRatio: `${size.width}x${size.height}`,
 			thumbs: {
-				original: objectUrl,
+				original: originalUrl,
 				small: objectUrl,
 			},
 			path,
@@ -181,7 +203,7 @@ function App() {
 					>
 						{row.list.map((image) => (
 							<a
-								href={image.url}
+								href={image.thumbs.original}
 								key={image.id}
 								data-pswp-width={image.aspectRatio.split("x")[0]}
 								data-pswp-height={image.aspectRatio.split("x")[1]}
@@ -193,7 +215,7 @@ function App() {
 								rel="noreferrer"
 								className="shadow-md rounded-md overflow-hidden"
 							>
-								<img src={image.url} alt={image.name} loading="lazy" />
+								<img src={image.thumbs.small} alt={image.name} loading="lazy" />
 							</a>
 						))}
 					</div>
