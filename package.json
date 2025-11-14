@@ -14,6 +14,8 @@
     "decimal.js": "^10.6.0",
     "es-toolkit": "^1.41.0",
     "image-size": "^2.0.2",
+    "photoswipe": "^5.4.4",
+    "pica": "^9.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "uuid": "^13.0.0"
@@ -23,6 +25,7 @@
     "@tailwindcss/vite": "^4.1.17",
     "@types/blueimp-md5": "^2.18.2",
     "@types/node": "^24.10.0",
+    "@types/pica": "^9.0.5",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",

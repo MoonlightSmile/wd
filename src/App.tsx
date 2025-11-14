@@ -5,6 +5,9 @@ import { isEmpty } from "es-toolkit/compat";
 import { calcImageRow } from "./utils/layout";
 import { v7 as uuid } from "uuid";
 import md5 from "blueimp-md5";
+import Pica from "pica";
+import PhotoSwipeLightbox from "photoswipe/lightbox";
+import "photoswipe/style.css";
 
 class LocalStorageForImageSize {
 	static getItem(key: string) {
@@ -50,7 +53,7 @@ export type ImageItem = {
 };
 
 const GAP = 5;
-const HEIGHT = 300;
+const HEIGHT = 200;
 
 function App() {
 	const [images, setImages] = useState<ImageItem[]>([]);
@@ -134,6 +137,20 @@ function App() {
 		return () => window.removeEventListener("resize", handleResize);
 	}, []);
 
+	useEffect(() => {
+		let lightbox = new PhotoSwipeLightbox({
+			gallery: "#my-gallery",
+			children: "a",
+			pswpModule: () => import("photoswipe"),
+		});
+		lightbox.init();
+
+		return () => {
+			lightbox.destroy();
+			lightbox = null;
+		};
+	}, []);
+
 	return (
 		<div>
 			<input
@@ -150,31 +167,38 @@ function App() {
 			</div>
 			{/* ----------------- */}
 			{/* 图片布局 */}
-			{layout.map((row) => (
-				<div
-					key={row.id}
-					style={{
-						height: row.height.toNumber(),
-						display: "flex",
-						gap: GAP,
-						marginLeft: GAP,
-						marginBottom: GAP,
-					}}
-				>
-					{row.list.map((image) => (
-						<div
-							key={image.id}
-							style={{
-								width: image.ratio * row.height.toNumber(),
-								height: "100%",
-							}}
-							className="shadow-md rounded-md overflow-hidden"
-						>
-							<img src={""} alt={image.name} loading="lazy" />
-						</div>
-					))}
-				</div>
-			))}
+			<div id="my-gallery">
+				{layout.map((row) => (
+					<div
+						key={row.id}
+						style={{
+							height: row.height.toNumber(),
+							display: "flex",
+							gap: GAP,
+							marginLeft: GAP,
+							marginBottom: GAP,
+						}}
+					>
+						{row.list.map((image) => (
+							<a
+								href={image.url}
+								key={image.id}
+								data-pswp-width={image.aspectRatio.split("x")[0]}
+								data-pswp-height={image.aspectRatio.split("x")[1]}
+								style={{
+									width: image.ratio * row.height.toNumber(),
+									height: "100%",
+								}}
+								target="_blank"
+								rel="noreferrer"
+								className="shadow-md rounded-md overflow-hidden"
+							>
+								<img src={image.url} alt={image.name} loading="lazy" />
+							</a>
+						))}
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }
