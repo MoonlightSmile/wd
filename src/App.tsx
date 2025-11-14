@@ -4,6 +4,18 @@ import Decimal from "decimal.js";
 import { isEmpty } from "es-toolkit/compat";
 import { calcImageRow } from "./utils/layout";
 import { v7 as uuid } from "uuid";
+import md5 from "blueimp-md5";
+
+class LocalStorageForImageSize {
+	static getItem(key: string) {
+		const item = localStorage.getItem(key);
+		return item ? JSON.parse(item) : null;
+	}
+	static setItem(key: string, value: ImageItem) {
+		localStorage.setItem(key, JSON.stringify(value));
+	}
+}
+
 const formatBytes = (size: number) => {
 	if (!size) return "0 B";
 	const units = ["B", "KB", "MB", "GB", "TB"];
@@ -38,7 +50,7 @@ export type ImageItem = {
 };
 
 const GAP = 5;
-const HEIGHT = 200;
+const HEIGHT = 300;
 
 function App() {
 	const [images, setImages] = useState<ImageItem[]>([]);
@@ -49,11 +61,17 @@ function App() {
 	const createImageItem = async (file: File): Promise<ImageItem> => {
 		const objectUrl = URL.createObjectURL(file);
 		const path = file.webkitRelativePath || file.name;
+		const key = md5(path);
+		const item = LocalStorageForImageSize.getItem(key);
+		if (item) {
+			item.url = objectUrl;
+			setProcessed((prev) => prev + 1);
+			return item;
+		}
 		const uint8Array = new Uint8Array(await file.arrayBuffer());
 		const size = imageSize(uint8Array);
 		const aspectRatio = new Decimal(size.width).div(size.height).toNumber();
-		setProcessed((prev) => prev + 1);
-		return {
+		const imageItem: ImageItem = {
 			id: uuid(),
 			name: path,
 			url: objectUrl,
@@ -67,6 +85,9 @@ function App() {
 			},
 			path,
 		};
+		LocalStorageForImageSize.setItem(key, imageItem);
+		setProcessed((prev) => prev + 1);
+		return imageItem;
 	};
 
 	const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (
@@ -92,6 +113,7 @@ function App() {
 
 	const layout = useMemo(() => {
 		if (isEmpty(images)) return [];
+		console.log("images :>> ", images);
 		return calcImageRow({
 			list: images,
 			height: HEIGHT,
@@ -126,6 +148,8 @@ function App() {
 			<div>
 				图片处理中：{processed} / {total}
 			</div>
+			{/* ----------------- */}
+			{/* 图片布局 */}
 			{layout.map((row) => (
 				<div
 					key={row.id}
@@ -144,8 +168,9 @@ function App() {
 								width: image.ratio * row.height.toNumber(),
 								height: "100%",
 							}}
+							className="shadow-md rounded-md overflow-hidden"
 						>
-							<img src={image.url} alt={image.name} />
+							<img src={""} alt={image.name} loading="lazy" />
 						</div>
 					))}
 				</div>
